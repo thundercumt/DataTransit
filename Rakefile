@@ -46,7 +46,3 @@ Rake::TestTask.new do |t|
 end
 
 require File::expand_path("../lib/tasks", __FILE__)
-
-task :hello do
-  print 'hello'
-end

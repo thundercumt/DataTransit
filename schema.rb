@@ -17,14 +17,4 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string "loc",   :limit => 13
   end
 
-  create_table "emp", :primary_key => "empno", :force => true do |t|
-    t.string   "ename",    :limit => 10
-    t.string   "job",      :limit => 9
-    t.integer  "mgr",      :limit => 4,  :precision => 4, :scale => 0
-    t.datetime "hiredate"
-    t.decimal  "sal",                    :precision => 7, :scale => 2
-    t.decimal  "comm",                   :precision => 7, :scale => 2
-    t.integer  "deptno",   :limit => 2,  :precision => 2, :scale => 0
-  end
-
 end
