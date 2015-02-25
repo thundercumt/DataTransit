@@ -7,7 +7,6 @@ module DataTransit
 class Database
     
     @@dbconfig = YAML::load( File.open( File.expand_path('../../database.yml', __FILE__) ) )
-    @@tables = YAML::load( File.open( File.expand_path('../../table.yml', __FILE__) ) )
     
     def self.source
       @@dbconfig['development2']
@@ -16,11 +15,7 @@ class Database
     def self.target
       @@dbconfig['development_target']
     end
-    
-    def self.tables
-      @@tables
-    end
-    
+  
   end
   
 end

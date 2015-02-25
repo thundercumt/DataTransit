@@ -6,6 +6,8 @@ require 'rubygems'
 require 'bundler/setup'
 Bundler.require
 
+=begin
+
 #initial code
 ENV['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.ZHS16GBK' if ENV['NLS_LANG'] == nil
 
@@ -56,3 +58,91 @@ require File.expand_path("schema")
 system 'type schema.rb'#schema.rb has not been created yet
 
 print ActiveRecord::Base.connection.tables
+
+
+
+=end
+
+def choose_table(*tables)
+  print tables.length, tables[0]
+  tables.each {|tbl| print tbl, " "}
+end
+
+
+choose_table :hello, :world, "hi", "there", 2, 3.1415
+
+def time_class
+  "acquisitiontime"
+end
+
+#DIR.glob("*events.rb").each { |filename| load filename  }
+
+all = proc { |ar_class| ar_class.method("find_each")  }
+year = proc { |ar_class|  }
+month = proc { |ar_class|  }
+week = Proc.new { |ar_class|  }
+day = Proc.new { |ar_class|  }
+
+@scope_selector
+def scope_by(&scope_selector)
+  @scope_selector = scope_selector
+end
+
+@fitler
+def filter_out_by(&filter)
+  filter
+end
+
+@actions = []
+def chain_action(action)
+  @actions << action
+end
+
+def action
+  @actions.each do |action|
+    action.call(1,2)
+  end
+end
+
+chain_action proc { |x,y| print "hello ", x,  y}
+chain_action Proc.new { print "world"}
+
+action
+
+print "\n\n\n"
+
+p1 = proc { |x, y| print x, y.call(x)}
+p2 = proc { |x| print x}
+
+p1.call('a', p2)
+
+class Foo
+  def bar
+    print "Foo bar"
+  end
+  
+  def call_method(proc, &block)
+    puts proc.class if proc != nil
+    puts proc.inspect if proc != nil
+    proc.call if proc != nil
+    puts block.class if block_given?
+    puts block.inspect if block_given?
+    block.call if block_given?
+    yield if block_given?
+  end
+end
+
+print "\nnew test starts\n"
+foo = Foo.new
+foo.call_method foo.method("bar") do print 'this is block' end
+
+#foo.call_method foo.method("bar")
+
+class Demo 
+  def self.play
+    puts "\nDemo#play\n"
+  end
+end
+
+
+foo.call_method Demo.method("play")

@@ -12,19 +12,22 @@
 
 ActiveRecord::Schema.define(:version => 0) do
 
-  create_table "dept", :primary_key => "deptno", :force => true do |t|
-    t.string "dname", :limit => 14
-    t.string "loc",   :limit => 13
+  create_table "SYS.AW$AWMD", :id => false, :force => true do |t|
+    t.integer "ps#",      :limit => 10,  :precision => 10, :scale => 0
+    t.integer "gen#",     :limit => 10,  :precision => 10, :scale => 0
+    t.integer "extnum",   :limit => 8,   :precision => 8,  :scale => 0
+    t.binary  "awlob"
+    t.string  "objname",  :limit => 256
+    t.string  "partname", :limit => 256
   end
 
-  create_table "emp", :primary_key => "empno", :force => true do |t|
-    t.string   "ename",    :limit => 10
-    t.string   "job",      :limit => 9
-    t.integer  "mgr",      :limit => 4,  :precision => 4, :scale => 0
-    t.datetime "hiredate"
-    t.decimal  "sal",                    :precision => 7, :scale => 2
-    t.decimal  "comm",                   :precision => 7, :scale => 2
-    t.integer  "deptno",   :limit => 2,  :precision => 2, :scale => 0
+  add_index "SYS.AW$AWMD", ["ps#", "gen#", "extnum"], :name => "awmd_i$", :unique => true, :tablespace => "sysaux"
+
+  create_table "SYS.AUDIT_ACTIONS", :id => false, :force => true do |t|
+    t.decimal "action",               :null => false
+    t.string  "name",   :limit => 28, :null => false
   end
+
+  add_index "SYS.AUDIT_ACTIONS", ["action", "name"], :name => "i_audit_actions", :unique => true, :tablespace => "system"
 
 end

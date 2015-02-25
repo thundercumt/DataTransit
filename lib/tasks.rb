@@ -25,13 +25,24 @@ namespace :db  do
     require File::expand_path('../model_dumper', __FILE__)
   end
   
+  desc "dsl related definitions"
+  task :dsl => :environment do
+    require File::expand_path('../rule_dsl', __FILE__)
+  end
+  
   desc "generate schema.rb, the schema of source database"
-  task :dump_schema => :environment do
+  task :dump_schema => :dsl do
     puts "preparing to generate schema.rb, the schema of source database\n"
     ActiveRecord::Base.establish_connection(DataTransit::Database.source)
-    tables = DataTransit::Database.tables
+    #tables = DataTransit::Database.tables
+    worker = DTWorker.new File::expand_path('../../rule.rb', __FILE__)
+    worker.load_work
+    tables = worker.tables
+    
+    print tables, "\n"
+    
     dumper = DataTransit::ModelDumper.new tables
-    dumper.dump_tables File.open('schema.rb', 'w');
+    dumper.dump_tables File.open(File::expand_path('../schema.rb', __FILE__), 'w');
     ActiveRecord::Base.remove_connection
     puts "schema.rb generated\n"
   end
@@ -58,15 +69,22 @@ namespace :db  do
       end
       
       print tbl
+      ##here requires a mechanism to fetch only selected portion of data, for load, network reasons, etc
       sourceCls.all.each do |source_row|
-        #print one
-        ActiveRecord::Base.dup
+        ##here requires a filter mechanism to filter out out-of-scope data
+        ##here requires a filter mechanism to filter in needed data, left blank if all are needed
         target_row = targetCls.new source_row.attributes
         target_row.save
       end
       print "data copy complete"
     end
     
+  end
+  
+  desc "data transit, copy rows from source db tables to target db tables\n it supports incremental copy by additional arguments"
+  task :copy_data_1, [] => :dsl do
+    worker = DTWorker.new File::expand_path('../../rule.rb', __FILE__)
+    worker.do_work
   end
   
   
@@ -82,8 +100,10 @@ namespace :db  do
     end
   end
   
-  task :my, [:arg1, :arg2, :arg3, :arg4] do |t, args|
-    print args
+  task :my, [:arg1, :arg2, :arg3, :arg4] => :environment do |t, args|
+    print t, args
+    #tables = DataTransit::Database.tables
+    #print tables
   end
   
 end

@@ -10,6 +10,7 @@ module DataTransit
     end
     
     def dump(stream)
+=begin      
       if all_tables_exist?
         header(stream)
         tables(stream)
@@ -17,6 +18,11 @@ module DataTransit
       else
         print "No schema generated, because some table[s] do not exist!\n"
       end
+=end
+      header(stream)
+      tables(stream)
+      trailer(stream)
+      
       stream
     end
     
@@ -29,6 +35,7 @@ module DataTransit
   private
     def all_tables_exist?
       all_tables = @connection.tables
+      print all_tables, '!!!!!!!!!!!!!!!!!!!!111'
       tables_all_exist = true
       
       @@tables.each do |tbl|
