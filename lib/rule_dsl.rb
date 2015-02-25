@@ -29,12 +29,12 @@ module RULE_DSL
     @cond[:search_cond] ||= search_cond
   end
   
-  def register_primary_key key
+  def register_primary_key *key
     @cond ||= {}
-    @cond[:primary_key] ||= key.dup
+    @cond[:primary_key] ||= key.map(&:downcase)
   end
 
-  def filter_out_by &filter
+  def filter_out_with &filter
     @filters ||= []
     @filters << filter
   end
@@ -62,12 +62,18 @@ class DTWorker
     @tables.each do |tbl|
       sourceCls = Class.new(DataTransit::Source::SourceBase) do
         self.table_name = tbl
-        self.primary_key= given_pk if given_pk
+        #self.primary_key= given_pk if given_pk
+        #add support for dynamic pk verification
       end
+      
+      columns = sourceCls.columns.map(&:name).map(&:downcase)
+      pk = get_pk(columns, given_pk)
+      sourceCls.instance_eval( "self.primary_key = \"#{pk}\"")
       
       targetCls = Class.new(DataTransit::Target::TargetBase) do
         self.table_name = tbl
       end
+      targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
       
       print tbl
       do_batch_copy sourceCls, targetCls
@@ -103,6 +109,16 @@ class DTWorker
     end
     
     false
+  end
+  
+  private
+  def get_pk(columns, given_pk)
+    pk = columns & given_pk
+    if pk && pk.length > 0
+      pk = pk[0]
+    else
+      pk = "id"
+    end
   end
   
 end

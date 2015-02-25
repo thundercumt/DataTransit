@@ -57,47 +57,9 @@ namespace :db  do
   end
   
   desc "data transit, copy rows from source db tables to target db tables\n it supports incremental copy by additional arguments"
-  task :copy_data, [] => :environment do
-    tables = DataTransit::Database.tables
-    tables.each do |tbl|
-      sourceCls = Class.new(DataTransit::Source::SourceBase) do
-        self.table_name = tbl
-      end
-      
-      targetCls = Class.new(DataTransit::Target::TargetBase) do
-        self.table_name = tbl
-      end
-      
-      print tbl
-      ##here requires a mechanism to fetch only selected portion of data, for load, network reasons, etc
-      sourceCls.all.each do |source_row|
-        ##here requires a filter mechanism to filter out out-of-scope data
-        ##here requires a filter mechanism to filter in needed data, left blank if all are needed
-        target_row = targetCls.new source_row.attributes
-        target_row.save
-      end
-      print "data copy complete"
-    end
-    
-  end
-  
-  desc "data transit, copy rows from source db tables to target db tables\n it supports incremental copy by additional arguments"
-  task :copy_data_1, [] => :dsl do
+  task :copy_data, [] => :dsl do
     worker = DTWorker.new File::expand_path('../../rule.rb', __FILE__)
     worker.do_work
-  end
-  
-  
-  desc "development use only"
-  task :test => :environment do
-    tables = DataTransit::Database.tables
-    tables.each do |tbl|
-      targetCls = Class.new(DataTransit::Target::TargetBase) do
-        self.table_name = tbl
-      end
-      
-      print tbl, ":", targetCls.all
-    end
   end
   
   task :my, [:arg1, :arg2, :arg3, :arg4] => :environment do |t, args|
