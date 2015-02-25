@@ -62,10 +62,10 @@ namespace :db  do
     worker.do_work
   end
   
-  task :my, [:arg1, :arg2, :arg3, :arg4] => :environment do |t, args|
-    print t, args
+  #task :my, [:arg1, :arg2, :arg3, :arg4] => :environment do |t, args|
+    #print t, args
     #tables = DataTransit::Database.tables
     #print tables
-  end
+  #end
   
 end

@@ -29,16 +29,3 @@ production:
   database: comics_catalog_production  
   username: comics_catalog 
   password:
-      
-      
-tables:
-  - dept
-  - emp
-  
-processes:
-    - proc1:
-        name: hello
-        proc: 
-    - proc2:
-        name: world
-        proc: 
