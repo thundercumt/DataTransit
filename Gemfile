@@ -7,3 +7,5 @@ gem 'activerecord-oracle_enhanced-adapter',  '~> 1.4.0'
 gem 'ocelot', '~> 0.0.8'
 
 gem 'sqlite3'
+
+gem 'progress_bar'

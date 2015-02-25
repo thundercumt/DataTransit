@@ -5,6 +5,7 @@
 #chain_filter1 --> chain_filter2 --> chain_filter3
 
 require 'singleton'
+require 'progress_bar'
 
 #require File::expand_path('../database', __FILE__)
 require File::expand_path('../model/tables_source', __FILE__)
@@ -75,17 +76,17 @@ class DTWorker
       end
       targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
       
-      print tbl
+      print "\ntable ", tbl, ":"
       do_batch_copy sourceCls, targetCls
-      print " data copy complete\n"
     end
   end
   
   def do_batch_copy (sourceCls, targetCls)
     count = sourceCls.where(@cond[:search_cond]).size.to_f
-    print "\n", count, 'records', "\n"
     how_many_batch = (count / @batch_size).ceil
-    print how_many_batch, "batch jobs\n"
+    
+    #the progress bar
+    bar = ProgressBar.new(count)
     
     0.upto (how_many_batch-1) do |i|  
       sourceCls.where(@cond[:search_cond]).find_each(
@@ -94,9 +95,11 @@ class DTWorker
         if @filters && @filters.length > 0
           next if do_filter_out source_row
         end
-        print '.'
         target_row = targetCls.new source_row.attributes
         target_row.save
+        
+        #update progress
+        bar.increment!
       end
     end
   end
