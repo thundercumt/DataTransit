@@ -6,7 +6,7 @@ module DataTransit
 
 class Database
     
-    @@dbconfig = YAML::load( File.open( File.expand_path('../../database.yml', __FILE__) ) )
+    @@dbconfig = YAML::load( File.open( File.expand_path('../../../database.yml', __FILE__) ) )
     
     def self.source
       @@dbconfig['development2']
