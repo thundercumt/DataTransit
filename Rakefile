@@ -45,4 +45,4 @@ Rake::TestTask.new do |t|
   t.test_files = FileList['test/**/*.rb']
 end
 
-require File::expand_path("../lib/tasks", __FILE__)
+# require File::expand_path("../lib/tasks", __FILE__)
