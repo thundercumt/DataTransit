@@ -77,7 +77,9 @@ class DTWorker
       targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
       
       print "\ntable ", tbl, ":\n"
-      do_batch_copy sourceCls, targetCls
+      targetCls.transaction do
+        do_batch_copy sourceCls, targetCls
+      end
     end
   end
   
