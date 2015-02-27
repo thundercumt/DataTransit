@@ -2,9 +2,9 @@
 # To change this template file, choose Tools | Templates
 # and open the template in the editor.
 
-require 'rubygems'
-require 'bundler/setup'
-Bundler.require
+#require 'rubygems'
+#require 'bundler/setup'
+#Bundler.require
 
 #initial code
 ENV['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.ZHS16GBK' if ENV['NLS_LANG'] == nil

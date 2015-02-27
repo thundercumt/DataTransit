@@ -12,7 +12,7 @@ require 'rdoc/task'
 require 'rake/testtask'
 
 spec = Gem::Specification.new do |s|
-  s.name = 'DataTransit'
+  s.name = 'data_transit'
   s.version = '0.0.1'
   s.has_rdoc = true
   s.extra_rdoc_files = ['README', 'LICENSE']
@@ -20,8 +20,8 @@ spec = Gem::Specification.new do |s|
   s.description = s.summary
   s.author = 'thundercumt'
   s.email = 'thundercumt@126.com'
-  # s.executables = ['your_executable_here']
-  s.files = %w(LICENSE README Rakefile) + Dir.glob("{bin,lib,spec}/**/*")
+  s.executables << "data_transit"
+  s.files = %w(LICENSE README Rakefile Database.yml) + Dir.glob("{bin,lib,spec}/**/*")
   s.require_path = "lib"
   s.bindir = "bin"
 end
@@ -36,7 +36,7 @@ Rake::RDocTask.new do |rdoc|
   files =['README', 'LICENSE', 'lib/**/*.rb']
   rdoc.rdoc_files.add(files)
   rdoc.main = "README" # page to start on
-  rdoc.title = "DataTransit Docs"
+  rdoc.title = "Data_Transit Docs"
   rdoc.rdoc_dir = 'doc/rdoc' # rdoc output folder
   rdoc.options << '--line-numbers'
 end
