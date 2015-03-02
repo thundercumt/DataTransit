@@ -87,6 +87,10 @@ class DTWorker
     count = sourceCls.where(@cond[:search_cond]).size.to_f
     how_many_batch = (count / @batch_size).ceil
     
+    if count <= 0 then
+      return
+    end
+    
     #the progress bar
     bar = ProgressBar.new(count)
     

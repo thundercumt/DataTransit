@@ -11,8 +11,9 @@ ENV['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.ZHS16GBK' if ENV['NLS_LANG'] == nil
 # It is recommended to set time zone in TZ environment variable so that the same timezone will be used by Ruby and by Oracle session
 ENV['TZ'] = 'UTC'
 
-
 require 'active_record'
+ActiveRecord::Batches.send(:include, CleanFindInBatches)
+
 require File::expand_path('../database', __FILE__)
 require File::expand_path('../model/tables_source', __FILE__)
 require File::expand_path('../model/tables_target', __FILE__)

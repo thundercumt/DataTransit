@@ -1,28 +1,24 @@
-development1:
+source:
   adapter: oracle_enhanced
-  database: orcl
-  username: scott
-  password: tiger  
+  host: 10.162.211.9
+  port: 1521
+  database: ztjc2
+  username: mw_ztjc
+  password: ztjc
 
-development2:
+target:
   adapter: oracle_enhanced
-  host: 10.162.106.154
+  host: 10.162.106.153
   port: 1521
   database: orcl
-  username: scott
-  password: tiger
+  username: mw_app
+  password: mw_app
   
-development_target:
+test_target:
   adapter: sqlite3
   database: development.sqlite3
   pool: 5
   timeout: 5000
-
-test: 
-  adapter: oracle 
-  database: comics_catalog_test 
-  username: comics_catalog 
-  password: 
 
 production: 
   adapter: oracle 

@@ -9,11 +9,11 @@ class Database
     @@dbconfig = YAML::load( File.open( File.expand_path('../../../database.yml', __FILE__) ) )
     
     def self.source
-      @@dbconfig['development2']
+      @@dbconfig['source']
     end
     
     def self.target
-      @@dbconfig['development_target']
+      @@dbconfig['target']
     end
   
   end
