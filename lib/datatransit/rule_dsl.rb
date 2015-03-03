@@ -78,12 +78,12 @@ class DTWorker
       
       print "\ntable ", tbl, ":\n"
       targetCls.transaction do
-        do_batch_copy sourceCls, targetCls
+        do_batch_copy sourceCls, targetCls, pk
       end
     end
   end
   
-  def do_batch_copy (sourceCls, targetCls)
+  def do_batch_copy (sourceCls, targetCls, pk = nil)
     count = sourceCls.where(@cond[:search_cond]).size.to_f
     how_many_batch = (count / @batch_size).ceil
     
@@ -102,6 +102,13 @@ class DTWorker
           next if do_filter_out source_row
         end
         target_row = targetCls.new source_row.attributes
+        
+        #activerecord would ignore pk field, and the above initialization will result nill primary key.
+        #here the original pk is used in the target_row, it is what we need exactly.
+        if pk 
+          target_row.send( "#{pk}=", source_row.send("#{pk}") )
+        end
+        
         target_row.save
         
         #update progress

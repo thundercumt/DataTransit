@@ -12,6 +12,7 @@ ENV['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.ZHS16GBK' if ENV['NLS_LANG'] == nil
 ENV['TZ'] = 'UTC'
 
 require 'active_record'
+require File::expand_path('../clean_find_in_batches', __FILE__)
 ActiveRecord::Batches.send(:include, CleanFindInBatches)
 
 require File::expand_path('../database', __FILE__)
