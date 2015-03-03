@@ -60,26 +60,29 @@ class DTWorker
     load_work
     given_pk = @cond[:primary_key]#a context-free-variable in context switches
     
-    @tables.each do |tbl|
-      sourceCls = Class.new(DataTransit::Source::SourceBase) do
-        self.table_name = tbl
-        #self.primary_key= given_pk if given_pk
-        #add support for dynamic pk verification
-      end
-      
-      columns = sourceCls.columns.map(&:name).map(&:downcase)
-      pk = get_pk(columns, given_pk)
-      sourceCls.instance_eval( "self.primary_key = \"#{pk}\"")
-      
-      targetCls = Class.new(DataTransit::Target::TargetBase) do
-        self.table_name = tbl
-      end
-      targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
-      
-      print "\ntable ", tbl, ":\n"
-      targetCls.transaction do
+    #we copy all or nothing. a mess is not welcome here
+    #on failures, transaction will rollback automatically
+    DataTransit::Source::SourceBase.transaction do
+      @tables.each do |tbl|
+        sourceCls = Class.new(DataTransit::Source::SourceBase) do
+          self.table_name = tbl
+          #self.primary_key= given_pk if given_pk
+          #add support for dynamic pk verification
+        end
+
+        columns = sourceCls.columns.map(&:name).map(&:downcase)
+        pk = get_pk(columns, given_pk)
+        sourceCls.instance_eval( "self.primary_key = \"#{pk}\"")
+
+        targetCls = Class.new(DataTransit::Target::TargetBase) do
+          self.table_name = tbl
+        end
+        targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
+
+        print "\ntable ", tbl, ":\n"
         do_batch_copy sourceCls, targetCls, pk
       end
+      
     end
   end
   
