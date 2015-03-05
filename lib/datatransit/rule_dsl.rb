@@ -13,39 +13,97 @@ require File::expand_path('../model/tables_target', __FILE__)
 
 module RULE_DSL
   
-  def load_rule rule_file
-    self.instance_eval File.read(rule_file), rule_file
+  class Task
+    attr_accessor :tables, :search_cond, :pk, :pre_work, :post_work, :filter
+  end
+  
+  class TaskSet
+    def initialize
+      @tasks = []
+    end
+    
+    def push_back task
+      @tasks << task
+    end
+    
+    def pop_head
+      @tasks.delete_at 0
+    end
+    
+    def first_task
+      @tasks[0]
+    end
+    
+    def last_task
+      @tasks[@tasks.length - 1]
+    end
+    
+    def length
+      @tasks.length
+    end
+    
+    def task_at idx
+      @tasks[idx]
+    end
+    
+    def each 
+      for i in 0 .. @tasks.length-1
+        yield @tasks[i]
+      end
+    end
+  end
+  
+  def load_rule *rule_file
+    rule_file.each{ |file| self.instance_eval File.read(file), file }
   end
   
   def migrate &script
+    @taskset ||= TaskSet.new
+    task = Task.new
+    @taskset.push_back task
     yield 
   end
   
   def choose_table *tables
-    @tables = tables.freeze
+    task = @taskset.last_task
+    task.tables = tables
   end
 
   def batch_by search_cond
-    @cond ||= {}
-    @cond[:search_cond] ||= search_cond
+    task = @taskset.last_task
+    task.search_cond = search_cond
   end
   
   def register_primary_key *key
-    @cond ||= {}
-    @cond[:primary_key] ||= key.map(&:downcase)
+    task = @taskset.last_task
+    task.pk = key.map(&:downcase)
   end
 
   def filter_out_with &filter
-    @filters ||= []
-    @filters << filter
+    task = @taskset.last_task
+    task.filter = filter
+  end
+  
+  def pre_work &pre
+    task = @taskset.last_task
+    task.pre_work = pre
+  end
+  
+  def post_work &post
+    task = @taskset.last_task
+    task.post_work = post
+  end
+  
+  def get_all_tables
+    tables = []
+    @taskset.each { |task| tables << task.tables }
+    tables.flatten!
   end
 end
 
 class DTWorker
   include RULE_DSL
-  
   attr_accessor :batch_size
-  attr_reader :tables
   
   def initialize rule_file
     @rule_file = rule_file
@@ -57,86 +115,114 @@ class DTWorker
   end
   
   def do_work
-    load_work
-    given_pk = @cond[:primary_key]#a context-free-variable in context switches
-    
     #we copy all or nothing. a mess is not welcome here
     #on failures, transaction will rollback automatically
     DataTransit::Target::TargetBase.transaction do
-      @tables.each do |tbl|
-        sourceCls = Class.new(DataTransit::Source::SourceBase) do
-          self.table_name = tbl
-          #self.primary_key= given_pk if given_pk
-          #add support for dynamic pk verification
-        end
-
-        columns = sourceCls.columns.map(&:name).map(&:downcase)
-        pk = get_pk(columns, given_pk)
-        sourceCls.instance_eval( "self.primary_key = \"#{pk}\"")
-
-        targetCls = Class.new(DataTransit::Target::TargetBase) do
-          self.table_name = tbl
-        end
-        targetCls.instance_eval( "self.primary_key = \"#{pk}\"")
-
-        print "\ntable ", tbl, ":\n"
-        do_batch_copy sourceCls, targetCls, pk
+      @taskset.each do |task|
+        do_task task
       end
-      
     end
   end
   
-  def do_batch_copy (sourceCls, targetCls, pk = nil)
-    count = sourceCls.where(@cond[:search_cond]).size.to_f
-    how_many_batch = (count / @batch_size).ceil
+  def do_task task
+    pks = task.pk#a context-free-variable in context switches
+    tables = task.tables
     
-    if count <= 0 then
-      return
+    tables.each do |tbl|
+      sourceCls = Class.new(DataTransit::Source::SourceBase) do
+        self.table_name = tbl
+      end
+
+      #columns = sourceCls.columns.map(&:name).map(&:downcase)
+      columns = sourceCls.columns
+      pk_column = get_pk_column(columns, pks)
+      if pk_column != nil
+        pk, pk_type = pk_column.name, pk_column.type
+      else
+        pk, pk_type = nil, nil
+      end
+
+      sourceCls.instance_eval( "self.primary_key = \"#{pk}\"") if pk != nil
+
+      targetCls = Class.new(DataTransit::Target::TargetBase) do
+        self.table_name = tbl
+      end
+      targetCls.instance_eval( "self.primary_key = \"#{pk}\"") if pk != nil
+
+      print "\ntable ", tbl, ":\n"
+      do_batch_copy sourceCls, targetCls, task, pk, pk_type=="integer"
     end
+  end
+  
+  def do_batch_copy (sourceCls, targetCls, task, pk = nil, in_batch = false)
+    count = sourceCls.where(task.search_cond).size.to_f
+    return if count <= 0
     
+    how_many_batch = (count / @batch_size).ceil
     #the progress bar
     bar = ProgressBar.new(count)
     
-    0.upto (how_many_batch-1) do |i|  
-      sourceCls.where(@cond[:search_cond]).find_each(
-        start: i * @batch_size, batch_size: @batch_size) do |source_row|
+    if in_batch 
+      0.upto (how_many_batch-1) do |i|  
+        sourceCls.where(task.search_cond).find_each(
+          start: i * @batch_size, batch_size: @batch_size) do |source_row|
+          
+          #update progress
+          bar.increment!
+          
+          if task.filter
+            next if do_filter_out task.filter, source_row
+          end
+          target_row = targetCls.new source_row.attributes
 
-        if @filters && @filters.length > 0
-          next if do_filter_out source_row
+          #activerecord would ignore pk field, and the above initialization will result nill primary key.
+          #here the original pk is used in the target_row, it is what we need exactly.
+          if pk 
+            target_row.send( "#{pk}=", source_row.send("#{pk}") )
+          end
+
+          target_row.save
+        end
+      end
+    else
+      sourceCls.where(task.search_cond).each do |source_row|
+        #update progress
+        bar.increment!
+        
+        if task.filter
+          next if do_filter_out task.filter, source_row
         end
         target_row = targetCls.new source_row.attributes
-        
+
         #activerecord would ignore pk field, and the above initialization will result nill primary key.
         #here the original pk is used in the target_row, it is what we need exactly.
         if pk 
           target_row.send( "#{pk}=", source_row.send("#{pk}") )
         end
-        
+
         target_row.save
-        
-        #update progress
-        bar.increment!
-      end
-    end
-  end
-  
-  def do_filter_out row
-    @filters.each do |filter|
-      if filter.call row
-        return true
       end
     end
     
+    
+  end
+  
+  def do_filter_out filter, row
+    if filter.call row
+      return true
+    end
     false
   end
   
   private
-  def get_pk(columns, given_pk)
-    pk = columns & given_pk
+  def get_pk_column(columns, given_pk)
+    column_names = columns.map(&:name).map(&:downcase)
+    pk = column_names & given_pk
     if pk && pk.length > 0
       pk = pk[0]
+      return columns[column_names.index(pk)]
     else
-      pk = "id"
+      return nil
     end
   end
   

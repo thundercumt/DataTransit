@@ -27,7 +27,7 @@ def dump_schema schema_file, rule_file
   #tables = DataTransit::Database.tables
   worker = DTWorker.new rule_file
   worker.load_work
-  tables = worker.tables
+  tables = worker.get_all_tables
 
   print tables, "\n"
 
@@ -48,6 +48,19 @@ end
   
 def copy_data rule_file
   worker = DTWorker.new rule_file
+  worker.load_work
   worker.do_work
 end
 
+def setup_db_conn db_yml
+  if File::exists? db_yml
+    src = File::open(db_yml, "r")
+    dst = File::open( File.expand_path('../../../database.yml', __FILE__), "w" )
+    
+    src.each_line { |line|
+       dst.write line
+    }
+    src.close
+    dst.close
+  end
+end

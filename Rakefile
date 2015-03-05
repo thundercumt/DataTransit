@@ -13,7 +13,7 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |s|
   s.name = 'data_transit'
-  s.version = '0.0.1'
+  s.version = '0.2.0'
   s.has_rdoc = true
   s.extra_rdoc_files = ['README', 'LICENSE']
   s.summary = 'Your summary here'
