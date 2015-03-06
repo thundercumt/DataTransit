@@ -150,8 +150,14 @@ class DTWorker
       targetCls.instance_eval( "self.primary_key = \"#{pk}\"") if pk != nil
 
       print "\ntable ", tbl, ":\n"
+      do_user_ar_proc targetCls, task.pre_work if task.pre_work
       do_batch_copy sourceCls, targetCls, task, pk, pk_type=="integer"
+      do_user_ar_proc targetCls, task.post_work if task.post_work
     end
+  end
+  
+  def do_user_ar_proc targetCls, proc
+    proc.call targetCls
   end
   
   def do_batch_copy (sourceCls, targetCls, task, pk = nil, in_batch = false)
