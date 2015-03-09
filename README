@@ -33,7 +33,7 @@ using and configured properly. As the name suggests, source designates which
 database you plan to copy data from, while target means the copy destination.
 Note the key 'source' and 'target' should be kept unchanged!
 For example, here is sample file for oracle dbms.
-#
+
 database.yml
 source:#don't change this line
   adapter: oracle_enhanced
@@ -83,6 +83,7 @@ by removing primary_key => "obj_id" and adding :id=>false, and then appending
 primary key constraint in the end of each table definition. See below.
 
 here is an example dumped schema file
+
 ActiveRecord::Schema.define(:version => 0) do
   create_table "table_one", primary_key => "obj_id", :force => true do |t|
     #other fields
@@ -91,6 +92,7 @@ ActiveRecord::Schema.define(:version => 0) do
 end
 
 and I manually changed the schema definition to
+
 ActiveRecord::Schema.define(:version => 0) do
   create_table "table_one", :id => false, :force => true do |t|
     t.string "obj_id",           :limit => 42  
@@ -109,7 +111,7 @@ If everything goes well, you will see a bunch of ddl execution history.
 [rule_file] contains your copy logic. For security reasons, I changed table names
 and it looks as follows.
 
-#
+
 start_date = "2015-01-01 00:00:00"
 end_date = "2015-02-01 00:00:00"
 
@@ -132,7 +134,7 @@ migrate do
   pre_work do |targetCls| targetCls.delete_all("1>0")  end #delete all in target
   #post_work do |targetCls|  end
 end
-#
+
 
 Each migrate block contains a data_transit task. 
 
