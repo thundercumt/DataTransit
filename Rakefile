@@ -13,11 +13,11 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |s|
   s.name = 'data_transit'
-  s.version = '0.4.0'
+  s.version = '0.2.0'
   s.has_rdoc = true
   s.extra_rdoc_files = ['README', 'LICENSE']
   s.summary = 'a ruby gem/app used to migrate between databases, supporting customized migration procedure'
-  s.description = s.summary
+  s.description = 'data_transit relies on activerecord to generate database Models on the fly. Tt is executed within a database transaction, and should any error occur during data transit, it will cause the transaction to rollback. So don\'t worry about introducing dirty data into your target database'
   s.author = 'thundercumt'
   s.email = 'thundercumt@126.com'
   s.homepage = 'https://github.com/thundercumt/data_transit'
