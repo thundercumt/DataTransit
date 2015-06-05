@@ -164,6 +164,9 @@ class DTWorker
     count = sourceCls.where(task.search_cond).size.to_f
     return if count <= 0
     
+    #clear target table rows in case of violating pk constraint, etc
+    targetCls.delete_all(task.search_cond)
+    
     how_many_batch = (count / @batch_size).ceil
     #the progress bar
     bar = ProgressBar.new(count)
