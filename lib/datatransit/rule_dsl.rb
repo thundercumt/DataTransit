@@ -15,6 +15,10 @@ module RULE_DSL
   
   class Task
     attr_accessor :tables, :search_cond, :pk, :pre_work, :post_work, :filter
+    
+    def pk
+      @pk ||= []
+    end
   end
   
   class TaskSet
@@ -135,12 +139,8 @@ class DTWorker
 
       #columns = sourceCls.columns.map(&:name).map(&:downcase)
       columns = sourceCls.columns
-      pk_column = get_pk_column(columns, pks)
-      if pk_column != nil
-        pk, pk_type = pk_column.name, pk_column.type
-      else
-        pk, pk_type = nil, nil
-      end
+      
+      pk, pk_type = get_pk_column(columns, pks)
 
       sourceCls.instance_eval( "self.primary_key = \"#{pk}\"") if pk != nil
 
@@ -167,6 +167,9 @@ class DTWorker
     #clear target table rows in case of violating pk constraint, etc
     targetCls.delete_all(task.search_cond)
     
+    next_id = targetCls.maximum(targetCls.primary_key) || 0 #defaults to zero
+    next_id += 1
+    
     how_many_batch = (count / @batch_size).ceil
     #the progress bar
     bar = ProgressBar.new(count)
@@ -187,7 +190,12 @@ class DTWorker
           #activerecord would ignore pk field, and the above initialization will result nill primary key.
           #here the original pk is used in the target_row, it is what we need exactly.
           if pk 
-            target_row.send( "#{pk}=", source_row.send("#{pk}") )
+            if source_row.has_attribute?(pk)
+              target_row.send( "#{pk}=", source_row.send("#{pk}") )
+            else
+              target_row.send( "#{pk}=",  next_id)
+              next_id += 1
+            end
           end
 
           target_row.save
@@ -206,7 +214,12 @@ class DTWorker
         #activerecord would ignore pk field, and the above initialization will result nill primary key.
         #here the original pk is used in the target_row, it is what we need exactly.
         if pk 
-          target_row.send( "#{pk}=", source_row.send("#{pk}") )
+          if source_row.has_attribute?(pk)
+            target_row.send( "#{pk}=", source_row.send("#{pk}") )
+          else
+            target_row.send( "#{pk}=",  next_id)
+            next_id += 1
+          end
         end
 
         target_row.save
@@ -229,10 +242,27 @@ class DTWorker
     pk = column_names & given_pk
     if pk && pk.length > 0
       pk = pk[0]
-      return columns[column_names.index(pk)]
-    else
-      return nil
+      pk_column = columns[column_names.index(pk)]
+      if(pk_column.type == :integer) #active record mandates a int primary key
+        return pk_column.name, pk_column.type
+      else
+        raise ActiveRecord::ActiveRecordError, 
+          "ActiveRecord Mandates an Integer Primary Key, for Column #{pk_column.name}"
+      end
     end
+    
+    # check conflicts against default id prerequsite
+    id_idx = column_names.index('id')
+    if id_idx != nil
+      if columns[id_idx].type != :integer
+        raise ActiveRecord::ActiveRecordError, "ActiveRecord Mandates an Integer Primary Key, Default Name 'ID'"
+      else
+        return columns[id_idx].name, columns[id_idx].type
+      end
+    else
+        return 'id', :integer #default column 'id' 
+    end
+  
   end
   
 end
